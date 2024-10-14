@@ -18,7 +18,7 @@ plannerRouter.get('/:id', async (req: Request, res: Response) => {
 
 plannerRouter.post('/all-mugs-msgs', async (req: Request, res: Response) => {
 
-  console.log(req.body)
+  // console.log(req.body)
 
   let model = JSON.parse(req.body.model as string)
   let exp_setting = JSON.stringify(JSON.parse(req.body.exp_setting))
@@ -42,7 +42,7 @@ plannerRouter.post('/all-mugs-msgs', async (req: Request, res: Response) => {
 
 plannerRouter.post('/all-mugs-msgs-cost-bound', async (req: Request, res: Response) => {
 
-  console.log(req.body)
+  // console.log(req.body)
 
   let model = JSON.parse(req.body.model as string)
   let exp_setting = req.body.exp_setting as string

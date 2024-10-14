@@ -97,10 +97,14 @@ export async function schedule_run(explain_run: ExplainRun, callback: string) {
         }, 
     }
 
-    const result = get_res(explain_run);
-    
-    data.MUGS = result.MUGS
-    data.MGCS = result.MGCS
+    if(explain_run.status != RunStatus.FAILED){
+      const result = get_res(explain_run);
+      
+      data.MUGS = result.MUGS
+      data.MGCS = result.MGCS    
+    }
+
+    // console.log(data)
 
     let payload = JSON.stringify(data);
     console.log("PAYLOAD:")
@@ -122,7 +126,6 @@ export async function schedule_run(explain_run: ExplainRun, callback: string) {
             },
             error => console.log(error)
         )
-
   }
 
 
@@ -167,11 +170,16 @@ function run(explain_run: ExplainRun): Promise<ExplainRun> {
   }
 
 
-function get_res(explain_run: ExplainRun): Result {
+function get_res(explain_run: ExplainRun): Result | undefined{
+
+  if(! fs.existsSync(explain_run.exp_settings_path)){
+    return undefined;
+  }
 
   const raw_explanation_settings = fs.readFileSync(explain_run.exp_settings_path,'utf8');
   const explanation_settings = JSON.parse(raw_explanation_settings)
   const planProperties: PlanProperty[] = explanation_settings.plan_properties
+
   console.log(planProperties)
 
   const result_folder_path = results_folder + '/conflicts' + explain_run.id
@@ -181,6 +189,8 @@ function get_res(explain_run: ExplainRun): Result {
 
   const MSGS = json_res.MSGS.map(set => set.map(g => goal_translator(planProperties, g)))
   const allPPIds = planProperties.map(pp => pp._id)
+
+  console.log(MSGS)
 
   const trans_res: Result = {
     MUGS: {
@@ -193,8 +203,8 @@ function get_res(explain_run: ExplainRun): Result {
     }, 
   }
 
-  console.log(json_res)
-  console.log(trans_res)
+  // console.log(json_res)
+  // console.log(trans_res)
 
   return trans_res
 }
@@ -202,14 +212,22 @@ function get_res(explain_run: ExplainRun): Result {
 function goal_translator(plan_properties: PlanProperty[], goal: string): string{
 
     if(goal.startsWith('Atom')){
-      const formula = goal.replace('Atom ', '').replace(/\s/g, '');
-      const match = plan_properties.filter(p => p.type == 'G' && p.formula == formula);
-      console.log(match)
+      const formula = goal.replace('Atom ', '').replace(/\s/g, '').toLowerCase();
+      const match = plan_properties.filter(p => p.type == 'G' && p.formula.replace(/\s/g, '').toLowerCase() == formula);
       if(match.length == 1){
         return match[0]._id
       }
-      return 'ERROR'
     }
+
+    if(goal.startsWith('accepting')){
+      const name = goal.replace('accepting(','').replace(')','')
+      const match = plan_properties.filter(p => p.type == 'LTL' && p.name == name);
+      if(match.length == 1){
+        return match[0]._id
+      }
+    }
+    
+    return 'ERROR'
 }
 
 
