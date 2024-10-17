@@ -54,16 +54,16 @@ RUN rm -r builds
 RUN ./build.py
 
 # symbolic xaip
-RUN mkdir -p /usr/src/SYMBOLIC_XAIP
-COPY symbolic-xaip/ /usr/src/SYMBOLIC_XAIP/
-WORKDIR /usr/src/SYMBOLIC_XAIP
-RUN rm -r builds
-RUN ./build.py
+# RUN mkdir -p /usr/src/SYMBOLIC_XAIP
+# COPY symbolic-xaip/ /usr/src/SYMBOLIC_XAIP/
+# WORKDIR /usr/src/SYMBOLIC_XAIP
+# RUN rm -r builds
+# RUN ./build.py
 
 
 RUN mkdir -p /usr/src/app/src
 RUN mkdir -p /usr/src/app/uploads
-RUN mkdir -p /usr/src/app/plans
+RUN mkdir -p /usr/src/app/conflicts
 
 #install Node.js
 WORKDIR /usr/src/app
@@ -81,7 +81,7 @@ RUN npm install
 RUN npm install -g ts-node
 
 # run
-EXPOSE 3333
+EXPOSE 3334
 
 ENV PLANNER_FD_XAIP="/usr/src/FD_XAIP/fast-downward.py"
 ENV PLANNER_symbolic_XAIP="/usr/src/SYMBOLIC_XAIP/fast-downward.py"
