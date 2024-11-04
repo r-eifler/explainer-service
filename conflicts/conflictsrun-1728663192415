@@ -1,9 +1,0 @@
-{
-"MUGS": [
-	["Atom on(a, b)", "Atom on(b, a)"]
-],
-"MSGS": [
-	["Atom on(a, b)"],
-	["Atom on(b, a)"]
-]
-}
