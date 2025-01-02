@@ -2,9 +2,12 @@ import express from 'express';
 import { plannerRouter } from './routes/explainer';
 import { Agenda } from "@hokify/agenda";
 import { ExplainRun, schedule_run } from './run_explainer';
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-const port = 3334;
+const port = process.env.PLANNER_SERVICE_PORT || 3334;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

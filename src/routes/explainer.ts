@@ -3,6 +3,7 @@ import fs from 'fs'
 import { create_all_MUGS_MSGS_run, create_all_MUGS_MSGS_run_cost_bound } from '../run_explainer';
 import { agenda } from '..';
 import { toPDDL_domain, toPDDL_problem } from '../pddl';
+import { auth } from '../middleware/auth';
 
 
 export const plannerRouter = express.Router();
@@ -16,12 +17,19 @@ plannerRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-plannerRouter.post('/all-mugs-msgs', async (req: Request, res: Response) => {
+plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) => {
 
   // console.log(req.body)
 
   let model = JSON.parse(req.body.model as string)
   let exp_setting = JSON.stringify(JSON.parse(req.body.exp_setting))
+
+  console.log("############## MODEL ################")
+  console.log(model)
+  console.log("############## MODEL ################")
+  console.log("############## PROPERTIES ################")
+  console.log(exp_setting)
+  console.log("############## PROPERTIES ################")
 
   let domain_path = './uploads/' + Date.now() + 'domain.pddl'
   let problem_path = './uploads/' + Date.now() + 'problem.pddl'
@@ -40,7 +48,7 @@ plannerRouter.post('/all-mugs-msgs', async (req: Request, res: Response) => {
   
 });
 
-plannerRouter.post('/all-mugs-msgs-cost-bound', async (req: Request, res: Response) => {
+plannerRouter.post('/all-mugs-msgs-cost-bound', auth, async (req: Request, res: Response) => {
 
   // console.log(req.body)
 

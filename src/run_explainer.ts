@@ -109,12 +109,15 @@ export async function schedule_run(explain_run: ExplainRun, callback: string) {
     let payload = JSON.stringify(data);
     console.log("PAYLOAD:")
     console.log(payload)
-    console.log(callback)
+    console.log("call back URL:" + callback)
 
     const callbackRequest = new Request(callback, 
       {
           method: "POST",
-          headers: {"Content-Type": "application/json"},
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": 'Bearer ' + process.env.EXPLAINER_KEY
+          },
           body: payload,
       }
     )
@@ -143,9 +146,17 @@ function run(explain_run: ExplainRun): Promise<ExplainRun> {
         args = explain_run.args.map(a =>  ! a.includes('$cost_bound') ? a : a.replace('$cost_bound', explain_run.cost_bound));
       }
 
-      console.log(explain_run.explainer + ' ' + args.join(' '))
+      // console.log(explain_run.explainer + ' ' + args.join(' '))
 
       const process = spawn(explain_run.explainer, args);
+      process.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+      
+      process.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+      });
+      
       process.on('close', function (code) { 
         switch(code) {
           case 0:
@@ -180,12 +191,15 @@ function get_res(explain_run: ExplainRun): Result | undefined{
   const explanation_settings = JSON.parse(raw_explanation_settings)
   const planProperties: PlanProperty[] = explanation_settings.plan_properties
 
-  console.log(planProperties)
+  // console.log(planProperties)
 
   const result_folder_path = results_folder + '/conflicts' + explain_run.id
   const raw_res = fs.readFileSync(result_folder_path,'utf8');
 
   const json_res = JSON.parse(raw_res)
+
+  console.log("Out put FD:")
+  console.log(json_res)
 
   const MSGS = json_res.MSGS.map(set => set.map(g => goal_translator(planProperties, g)))
   const allPPIds = planProperties.map(pp => pp._id)
