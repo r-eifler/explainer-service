@@ -4,6 +4,7 @@ import { create_all_MUGS_MSGS_run, create_all_MUGS_MSGS_run_cost_bound } from '.
 import { agenda } from '..';
 import { toPDDL_domain, toPDDL_problem } from '../pddl';
 import { auth } from '../middleware/auth';
+import { setupExperimentEnvironment } from '../experiment_utils';
 
 
 var kill = require('tree-kill');
@@ -26,8 +27,7 @@ plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) =
 
     let model = JSON.parse(req.body.model as string)
     let exp_setting = JSON.stringify(JSON.parse(req.body.exp_setting))
-    const id = req.body.id;
-    console.log("Run: " + id);
+    const refId = req.body.id as string;
 
     // console.log("############## MODEL ################")
     // console.log(model)
@@ -36,26 +36,15 @@ plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) =
     // console.log(exp_setting)
     // console.log("############## PROPERTIES ################")
 
-    let domain_path = './uploads/' + id + 'domain.pddl'
-    let problem_path = './uploads/' + id + 'problem.pddl'
-    let exp_setting_path = './uploads/' + id + 'exp-setting.json'
+    
 
+    setupExperimentEnvironment(model, exp_setting, refId);
+    let exp_run = create_all_MUGS_MSGS_run(refId, model);
 
-    fs.writeFileSync(domain_path, toPDDL_domain(model));
-    fs.writeFileSync(problem_path, toPDDL_problem(model));
-    fs.writeFileSync(exp_setting_path, exp_setting)
+    res.status(201).send({id: exp_run.id, status: exp_run.status});
 
-    let plan_run = create_all_MUGS_MSGS_run('run-' + id, model, domain_path, problem_path, exp_setting_path);
+    const job = await agenda.now('explainer call', [refId, exp_run, req.body.callback]);
 
-    res.status(201).send({id: plan_run.id, status: plan_run.status});
-
-    const job = await agenda.now('explainer call', [id, plan_run, req.body.callback]);
-    // const job = await agenda.create('explainer call', [id, plan_run, req.body.callback]);
-    // job.forkMode(true);
-    // job.save();
-    // job.run();
-
-    // console.log(job);
   }
   catch(err){
     console.log(err);
@@ -64,31 +53,31 @@ plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) =
   
 });
 
-plannerRouter.post('/all-mugs-msgs-cost-bound', auth, async (req: Request, res: Response) => {
+// plannerRouter.post('/all-mugs-msgs-cost-bound', auth, async (req: Request, res: Response) => {
 
-  // console.log(req.body)
+//   // console.log(req.body)
 
-  let model = JSON.parse(req.body.model as string)
-  let exp_setting = req.body.exp_setting as string
-  const cost_bound = req.body.cost_bound as string
+//   let model = JSON.parse(req.body.model as string)
+//   let exp_setting = req.body.exp_setting as string
+//   const cost_bound = req.body.cost_bound as string
 
-  let domain_path = './uploads/' + Date.now() + 'domain.pddl'
-  let problem_path = './uploads/' + Date.now() + 'problem.pddl'
-  let exp_setting_path = './uploads/' + Date.now() + 'exp-setting.json'
+//   let domain_path = './uploads/' + Date.now() + 'domain.pddl'
+//   let problem_path = './uploads/' + Date.now() + 'problem.pddl'
+//   let exp_setting_path = './uploads/' + Date.now() + 'exp-setting.json'
 
 
-  fs.writeFileSync(domain_path, toPDDL_domain(model));
-  fs.writeFileSync(problem_path, toPDDL_problem(model));
-  fs.writeFileSync(exp_setting_path, exp_setting)
+//   fs.writeFileSync(domain_path, toPDDL_domain(model));
+//   fs.writeFileSync(problem_path, toPDDL_problem(model));
+//   fs.writeFileSync(exp_setting_path, exp_setting)
 
-  let plan_run = create_all_MUGS_MSGS_run_cost_bound('run-' + Date.now(), model, domain_path, problem_path, exp_setting_path, cost_bound);
+//   let plan_run = create_all_MUGS_MSGS_run_cost_bound(re, model, domain_path, problem_path, exp_setting_path, cost_bound);
 
-  res.status(201).send({id: plan_run.id, status: plan_run.status});
+//   res.status(201).send({id: plan_run.id, status: plan_run.status});
 
-  const job = await agenda.now('explainer call', [plan_run, req.body.callback]);
-  // console.log(JSON.stringify(job,null,2));
+//   const job = await agenda.now('explainer call', [plan_run, req.body.callback]);
+//   // console.log(JSON.stringify(job,null,2));
   
-});
+// });
 
 
 plannerRouter.post('/cancel', auth, async (req: Request, res: Response) => {

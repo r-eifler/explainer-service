@@ -28,53 +28,47 @@ export interface ExplainRun {
   id: string,
   model: PlanningModel,
   status: RunStatus,
-  domain_path: string,
-  problem_path: string,
-  exp_settings_path: string,
+  experiment_path: string,
   cost_bound?: string,
   explainer: string,
   args: string[]
 }
 
 
-export function create_all_MUGS_MSGS_run(id: string, model: PlanningModel, domain_path: string, problem_path: string, exp_settings_path: string): ExplainRun {
+export function create_all_MUGS_MSGS_run(id: string, model: PlanningModel): ExplainRun {
   return {
     id,
     model,
     status: RunStatus.PENDING,
-    domain_path,
-    problem_path,
-    exp_settings_path,
-    explainer: process.env['PLANNER_FD_XAIP'],
+    experiment_path: process.env.TEMP_RUN_FOLDERS + '/' + id,
+    explainer: process.env.EXPLAINER_SERVICE_PLANNER,
     args: [
-      domain_path, 
-      problem_path, 
+      'domain.pddl', 
+      'problem.pddl', 
       '--translate-options',
-      '--explanation-settings', exp_settings_path,
+      '--explanation-settings', 'exp-setting.json',
       '--search-options',
-      '--search', 'gsastar(evals=[blind], eval=ngs(hmax(no_deadends=true)), f=$conflicts)'
+      '--search', 'gsastar(evals=[blind], eval=ngs(hmax(no_deadends=true)), f=conflicts)'
     ]
   }
 }
 
 
-export function create_all_MUGS_MSGS_run_cost_bound(id: string, model: PlanningModel, domain_path: string, problem_path: string, exp_settings_path: string, cost_bound: string): ExplainRun {
+export function create_all_MUGS_MSGS_run_cost_bound(id: string, model: PlanningModel, cost_bound: string): ExplainRun {
   return {
     id,
     model,
     status: RunStatus.PENDING,
-    domain_path,
-    problem_path,
-    exp_settings_path,
+    experiment_path: process.env.TEMP_RUN_FOLDERS + '/' + id,
     cost_bound,
-    explainer: process.env['PLANNER_FD_XAIP'],
+    explainer: process.env.EXPLAINER_SERVICE_PLANNER,
     args: [
-      domain_path, 
-      problem_path, 
+      'domain.pddl', 
+      'problem.pddl', 
       '--translate-options',
-      '--explanation-settings', exp_settings_path,
+      '--explanation-settings',  'exp-setting.json',
       '--search-options',
-      '--search', 'gsastar(evals=[blind], eval=ngs(hmax(no_deadends=true)), f=$conflicts, bound=$cost_bound)'
+      '--search', 'gsastar(evals=[blind], eval=ngs(hmax(no_deadends=true)), f=conflicts, bound=$cost_bound)'
     ]
   }
 }
@@ -130,18 +124,19 @@ export async function schedule_run(explain_run: ExplainRun, callback: string, jo
             },
             error => console.log(error)
         )
+
+    // clean up
+    fs.rmSync(explain_run.experiment_path, { recursive: true, force: true });
+
   }
 
 
 function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
 
-    // create result folder
-    let conflicts_path = results_folder + '/conflicts' + explain_run.id
-
     return new Promise(function (resolve, reject) {
 
       explain_run.status = RunStatus.RUNNING
-      let args = explain_run.args.map(a =>  ! a.includes('$conflicts') ? a : a.replace('$conflicts', conflicts_path));
+      let args = explain_run.args;
 
       if(explain_run.cost_bound){
         args = explain_run.args.map(a =>  ! a.includes('$cost_bound') ? a : a.replace('$cost_bound', explain_run.cost_bound));
@@ -149,23 +144,25 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
 
       // console.log(explain_run.explainer + ' ' + args.join(' '))
 
-      const process = spawn(explain_run.explainer, args);
-      // const process = spawn("sh", ['-c', 'pwd']);
+      const options = {
+        cwd: explain_run.experiment_path,
+        env: process.env,
+      };
 
-      job.attrs.data.push(process.pid);
-      console.log("###############################################3");
-      console.log("ID:" + process.pid);
+      const explainProcess = spawn(explain_run.explainer, args, options);
+
+      job.attrs.data.push(explainProcess.pid);
       job.save();
 
-      process.stdout.on('data', (data) => {
+      explainProcess.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
       });
       
-      process.stderr.on('data', (data) => {
+      explainProcess.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
       });
       
-      process.on('close', function (code) { 
+      explainProcess.on('close', function (code) { 
         switch(code) {
           case 0:
             explain_run.status = RunStatus.FINISHED
@@ -180,7 +177,7 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
         console.log("ReturnCode: " + code);
         resolve(explain_run);
       });
-      process.on('error', function (err) {
+      explainProcess.on('error', function (err) {
         explain_run.status = RunStatus.FAILED
         // console.log("Error: " + err)
         reject(err);
@@ -191,17 +188,19 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
 
 function get_res(explain_run: ExplainRun): Result | undefined{
 
-  if(! fs.existsSync(explain_run.exp_settings_path)){
+  const exp_settings_path = explain_run.experiment_path + '/exp-setting.json';
+
+  if(! fs.existsSync(exp_settings_path)){
     return undefined;
   }
 
-  const raw_explanation_settings = fs.readFileSync(explain_run.exp_settings_path,'utf8');
+  const raw_explanation_settings = fs.readFileSync(exp_settings_path,'utf8');
   const explanation_settings = JSON.parse(raw_explanation_settings)
   const planProperties: PlanProperty[] = explanation_settings.plan_properties
 
   // console.log(planProperties)
 
-  const result_folder_path = results_folder + '/conflicts' + explain_run.id
+  const result_folder_path = explain_run.experiment_path + '/conflicts'
   const raw_res = fs.readFileSync(result_folder_path,'utf8');
 
   const json_res = JSON.parse(raw_res)

@@ -35,7 +35,7 @@ agenda.start().then(
   () => console.log("Job scheduler failed!")
 );
 
-console.log(process.env.PLANNER_FD_XAIP)
+console.log(process.env.EXPLAINER_SERVICE_PLANNER)
 
 agenda.define('explainer call', async job => {
   let plan_run = job.attrs.data[1] as ExplainRun;

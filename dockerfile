@@ -64,8 +64,7 @@ RUN ./build.py
 
 
 RUN mkdir -p /usr/src/app/src
-RUN mkdir -p /usr/src/app/uploads
-RUN mkdir -p /usr/src/app/conflicts
+RUN mkdir -p /usr/temp
 
 #install Node.js
 WORKDIR /usr/src/app
@@ -85,9 +84,10 @@ RUN npm install -g ts-node
 # run
 EXPOSE 3334
 
-ENV PLANNER_FD_XAIP="/usr/src/FD_XAIP/fast-downward.py"
-ENV PLANNER_symbolic_XAIP="/usr/src/SYMBOLIC_XAIP/fast-downward.py"
+ENV EXPLAINER_SERVICE_PLANNER="/usr/src/FD_XAIP/fast-downward.py"
+# ENV PLANNER_symbolic_XAIP="/usr/src/SYMBOLIC_XAIP/fast-downward.py"
 ENV LTL2HAO_PATH="/usr/src/ltlfkit/"
+ENV TEMP_RUN_FOLDERS="usr/temp"
 
 WORKDIR /usr/src/app/
 CMD npm start
