@@ -1,5 +1,5 @@
 import express from 'express';
-import { plannerRouter } from './routes/explainer';
+import { explainerRouter } from './routes/explainer';
 import { Agenda } from "@hokify/agenda";
 import { ExplainRun, schedule_run } from './run_explainer';
 import * as dotenv from "dotenv";
@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.use('/explain', plannerRouter);
+app.use('/explain', explainerRouter);
 
 
 app.listen(port, () => {

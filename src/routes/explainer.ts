@@ -9,10 +9,10 @@ import { setupExperimentEnvironment } from '../experiment_utils';
 
 var kill = require('tree-kill');
 
-export const plannerRouter = express.Router();
+export const explainerRouter = express.Router();
 
 
-plannerRouter.get('/:id', async (req: Request, res: Response) => {
+explainerRouter.get('/:id', async (req: Request, res: Response) => {
 
     // TODO return status of run with id 
 
@@ -20,7 +20,7 @@ plannerRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 
-plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) => {
+explainerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) => {
 
   try{
     // console.log(req.body)
@@ -80,7 +80,7 @@ plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) =
 // });
 
 
-plannerRouter.post('/cancel', auth, async (req: Request, res: Response) => {
+explainerRouter.post('/cancel', auth, async (req: Request, res: Response) => {
 
   try{
     const refId = req.body.id;
