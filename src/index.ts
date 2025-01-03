@@ -21,13 +21,13 @@ app.listen(port, () => {
 });
 
 
-const mongodbURL = process.env.MONGO || 'localhost:27017/agenda-test';
+const mongodbURL = process.env.MONGO || 'localhost:27017/agenda-explainer';
 
 export const agenda = new Agenda({
   db: {address: mongodbURL, collection: 'agendaJobs'},
   processEvery: '2 seconds',
   maxConcurrency: 1,
-  defaultConcurrency: 1,
+  defaultConcurrency: 1
 });
 
 agenda.start().then(
@@ -37,10 +37,10 @@ agenda.start().then(
 
 console.log(process.env.PLANNER_FD_XAIP)
 
-agenda.define('planner call', async job => {
-  let plan_run = job.attrs.data[0] as ExplainRun;
-  let callback  = job.attrs.data[1]as string
+agenda.define('explainer call', async job => {
+  let plan_run = job.attrs.data[1] as ExplainRun;
+  let callback  = job.attrs.data[2]as string
   console.log("Schedule job: " + plan_run.id);
-  schedule_run(plan_run, callback);
+  schedule_run(plan_run, callback, job);
 });
 

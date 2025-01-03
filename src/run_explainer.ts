@@ -2,6 +2,7 @@ import {spawn} from 'child_process';
 import * as fs from 'fs';
 import { PlanningModel } from './pddl';
 import { PlanProperty } from './interfaces';
+import { Job } from '@hokify/agenda';
 
 export enum RunStatus {
   PENDING = "PENDING",
@@ -80,9 +81,9 @@ export function create_all_MUGS_MSGS_run_cost_bound(id: string, model: PlanningM
 
 
 
-export async function schedule_run(explain_run: ExplainRun, callback: string) {
+export async function schedule_run(explain_run: ExplainRun, callback: string, job: Job) {
 
-    await run(explain_run);
+    await run(explain_run, job);
 
     let data = {
         id: explain_run.id,
@@ -132,7 +133,7 @@ export async function schedule_run(explain_run: ExplainRun, callback: string) {
   }
 
 
-function run(explain_run: ExplainRun): Promise<ExplainRun> {
+function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
 
     // create result folder
     let conflicts_path = results_folder + '/conflicts' + explain_run.id
@@ -149,6 +150,13 @@ function run(explain_run: ExplainRun): Promise<ExplainRun> {
       // console.log(explain_run.explainer + ' ' + args.join(' '))
 
       const process = spawn(explain_run.explainer, args);
+      // const process = spawn("sh", ['-c', 'pwd']);
+
+      job.attrs.data.push(process.pid);
+      console.log("###############################################3");
+      console.log("ID:" + process.pid);
+      job.save();
+
       process.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
       });

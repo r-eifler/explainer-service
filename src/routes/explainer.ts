@@ -6,6 +6,8 @@ import { toPDDL_domain, toPDDL_problem } from '../pddl';
 import { auth } from '../middleware/auth';
 
 
+var kill = require('tree-kill');
+
 export const plannerRouter = express.Router();
 
 
@@ -19,32 +21,46 @@ plannerRouter.get('/:id', async (req: Request, res: Response) => {
 
 plannerRouter.post('/all-mugs-msgs', auth, async (req: Request, res: Response) => {
 
-  // console.log(req.body)
+  try{
+    // console.log(req.body)
 
-  let model = JSON.parse(req.body.model as string)
-  let exp_setting = JSON.stringify(JSON.parse(req.body.exp_setting))
+    let model = JSON.parse(req.body.model as string)
+    let exp_setting = JSON.stringify(JSON.parse(req.body.exp_setting))
+    const id = req.body.id;
+    console.log("Run: " + id);
 
-  console.log("############## MODEL ################")
-  console.log(model)
-  console.log("############## MODEL ################")
-  console.log("############## PROPERTIES ################")
-  console.log(exp_setting)
-  console.log("############## PROPERTIES ################")
+    // console.log("############## MODEL ################")
+    // console.log(model)
+    // console.log("############## MODEL ################")
+    // console.log("############## PROPERTIES ################")
+    // console.log(exp_setting)
+    // console.log("############## PROPERTIES ################")
 
-  let domain_path = './uploads/' + Date.now() + 'domain.pddl'
-  let problem_path = './uploads/' + Date.now() + 'problem.pddl'
-  let exp_setting_path = './uploads/' + Date.now() + 'exp-setting.json'
+    let domain_path = './uploads/' + id + 'domain.pddl'
+    let problem_path = './uploads/' + id + 'problem.pddl'
+    let exp_setting_path = './uploads/' + id + 'exp-setting.json'
 
 
-  fs.writeFileSync(domain_path, toPDDL_domain(model));
-  fs.writeFileSync(problem_path, toPDDL_problem(model));
-  fs.writeFileSync(exp_setting_path, exp_setting)
+    fs.writeFileSync(domain_path, toPDDL_domain(model));
+    fs.writeFileSync(problem_path, toPDDL_problem(model));
+    fs.writeFileSync(exp_setting_path, exp_setting)
 
-  let plan_run = create_all_MUGS_MSGS_run('run-' + Date.now(), model, domain_path, problem_path, exp_setting_path);
+    let plan_run = create_all_MUGS_MSGS_run('run-' + id, model, domain_path, problem_path, exp_setting_path);
 
-  res.status(201).send({id: plan_run.id, status: plan_run.status});
+    res.status(201).send({id: plan_run.id, status: plan_run.status});
 
-  agenda.now('planner call', [plan_run, req.body.callback])
+    const job = await agenda.now('explainer call', [id, plan_run, req.body.callback]);
+    // const job = await agenda.create('explainer call', [id, plan_run, req.body.callback]);
+    // job.forkMode(true);
+    // job.save();
+    // job.run();
+
+    // console.log(job);
+  }
+  catch(err){
+    console.log(err);
+    res.status(500).send();
+  }
   
 });
 
@@ -69,56 +85,38 @@ plannerRouter.post('/all-mugs-msgs-cost-bound', auth, async (req: Request, res: 
 
   res.status(201).send({id: plan_run.id, status: plan_run.status});
 
-  agenda.now('planner call', [plan_run, req.body.callback])
+  const job = await agenda.now('explainer call', [plan_run, req.body.callback]);
+  // console.log(JSON.stringify(job,null,2));
   
 });
 
 
-// plannerRouter.post('/one-mugs', async (req: Request, res: Response) => {
+plannerRouter.post('/cancel', auth, async (req: Request, res: Response) => {
 
-//   console.log(req.body)
+  try{
+    const refId = req.body.id;
+    console.log("Cancel: " + refId)
 
-//   let model = JSON.parse(req.body.model as string)
-//   let exp_setting = req.body.temp_goals as string
+    const jobs = await agenda.jobs({name: 'explainer call'});
+    // console.log(jobs.map(d => d['attrs']));
 
-//   let domain_path = './uploads/' + Date.now() + 'domain.pddl'
-//   let problem_path = './uploads/' + Date.now() + 'problem.pddl'
-//   let exp_setting_path = './uploads/' + Date.now() + 'exp-setting.json'
+    const cancelJob = jobs.filter(j => j['attrs'].data[0] === refId)[0];
 
+    if (cancelJob === undefined){
+      return res.status(400).send();
+    }
 
-//   fs.writeFileSync(domain_path, toPDDL_domain(model));
-//   fs.writeFileSync(problem_path, toPDDL_problem(model));
-//   fs.writeFileSync(exp_setting_path, exp_setting)
+    // console.log(cancelJob);
+    cancelJob.cancel();
+    kill(cancelJob.attrs.data[3], 'SIGKILL');
+    // console.log(cancelJob);
+    // const result = await cancelJob.remove();
+    // console.log("Canceled: " + result);
+    res.status(201).send();
+  }
+  catch(err){
+    console.log(err);
+    res.status(500).send();
+  }
+});
 
-//   let plan_run = create_one_MUGS('run-' + Date.now(), model, domain_path, problem_path, exp_setting_path);
-
-//   res.status(201).send({id: plan_run.id, status: plan_run.status});
-
-//   agenda.now('planner call', [plan_run, req.body.callback])
-  
-// });
-
-
-// plannerRouter.post('/one-msgs', async (req: Request, res: Response) => {
-
-//   console.log(req.body)
-
-//   let model = JSON.parse(req.body.model as string)
-//   let exp_setting = req.body.temp_goals as string
-
-//   let domain_path = './uploads/' + Date.now() + 'domain.pddl'
-//   let problem_path = './uploads/' + Date.now() + 'problem.pddl'
-//   let exp_setting_path = './uploads/' + Date.now() + 'exp-setting.json'
-
-
-//   fs.writeFileSync(domain_path, toPDDL_domain(model));
-//   fs.writeFileSync(problem_path, toPDDL_problem(model));
-//   fs.writeFileSync(exp_setting_path, exp_setting)
-
-//   let plan_run = create_one_MSGS('run-' + Date.now(), model, domain_path, problem_path, exp_setting_path);
-
-//   res.status(201).send({id: plan_run.id, status: plan_run.status});
-
-//   agenda.now('planner call', [plan_run, req.body.callback])
-  
-// });
