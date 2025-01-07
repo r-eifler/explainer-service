@@ -87,7 +87,7 @@ EXPOSE 3334
 ENV EXPLAINER_SERVICE_PLANNER="/usr/src/FD_XAIP/fast-downward.py"
 # ENV PLANNER_symbolic_XAIP="/usr/src/SYMBOLIC_XAIP/fast-downward.py"
 ENV LTL2HAO_PATH="/usr/src/ltlfkit/"
-ENV TEMP_RUN_FOLDERS="usr/temp"
+ENV TEMP_RUN_FOLDERS="/usr/temp"
 
 WORKDIR /usr/src/app/
 CMD npm start

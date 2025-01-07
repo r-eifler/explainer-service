@@ -126,7 +126,7 @@ export async function schedule_run(explain_run: ExplainRun, callback: string, jo
         )
 
     // clean up
-    fs.rmSync(explain_run.experiment_path, { recursive: true, force: true });
+    // fs.rmSync(explain_run.experiment_path, { recursive: true, force: true });
 
   }
 
@@ -142,7 +142,7 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
         args = explain_run.args.map(a =>  ! a.includes('$cost_bound') ? a : a.replace('$cost_bound', explain_run.cost_bound));
       }
 
-      // console.log(explain_run.explainer + ' ' + args.join(' '))
+      console.log(explain_run.explainer + ' ' + args.join(' '))
 
       const options = {
         cwd: explain_run.experiment_path,
@@ -209,7 +209,7 @@ function get_res(explain_run: ExplainRun): Result | undefined{
   console.log(json_res)
 
   const MSGS = json_res.MSGS.map(set => set.map(g => goal_translator(planProperties, g)))
-  const allPPIds = planProperties.map(pp => pp._id)
+  const allSoftPIds = planProperties.filter(pp => !pp.globalHardGoal).map(pp => pp._id)
 
   console.log(MSGS)
 
@@ -220,7 +220,7 @@ function get_res(explain_run: ExplainRun): Result | undefined{
     },
     MGCS:{
       complete: false,
-      subsets: MSGS.map(set => allPPIds.filter(id => ! set.includes(id)))
+      subsets: MSGS.map(set => allSoftPIds.filter(id => ! set.includes(id)))
     }, 
   }
 

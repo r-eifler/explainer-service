@@ -10,4 +10,5 @@ export interface PlanProperty extends Document {
     project: string;
     type: string;
     formula: string;
+    globalHardGoal: boolean;
 }
