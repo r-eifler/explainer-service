@@ -154,13 +154,15 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
       job.attrs.data.push(explainProcess.pid);
       job.save();
 
-      explainProcess.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-      });
-      
-      explainProcess.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
-      });
+      if(process.env.DEBUG == 'true'){
+        explainProcess.stdout.on('data', (data) => {
+          console.log(`stdout: ${data}`);
+        });
+        
+        explainProcess.stderr.on('data', (data) => {
+          console.error(`stderr: ${data}`);
+        });
+      }
       
       explainProcess.on('close', function (code) { 
         switch(code) {
