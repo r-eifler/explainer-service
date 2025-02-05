@@ -1,19 +1,27 @@
 import express from 'express';
 import { explainerRouter } from './routes/explainer';
 import { Agenda } from "@hokify/agenda";
-import { ExplainRun, schedule_run } from './run_explainer';
+import { schedule_run } from './explainer/run_explainer';
 import * as dotenv from "dotenv";
+import { ExplainRun } from './domain/explain_run';
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PLANNER_SERVICE_PORT || 3334;
+const port = process.env.EXPLAINER_SERVICE_PORT || 3334;
+
+console.log("Debug output: " + process.env.DEBUG_OUTPUT);
+console.log("folder to temporally store the experiment data: " + process.env.TEMP_RUN_FOLDERS);
+console.log("Planner:")
+console.log(process.env.EXPLAINER_SERVICE_PLANNER)
+console.log("Dependencies:")
+console.log(process.env.LTL2HAO_PATH)
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.use('/explain', explainerRouter);
+app.use('', explainerRouter);
 
 
 app.listen(port, () => {
@@ -21,11 +29,11 @@ app.listen(port, () => {
 });
 
 
-const mongodbURL = process.env.MONGO || 'localhost:27017/agenda-explainer';
+const mongodbURL = process.env.EXPLAINER_MONGO_DB || 'localhost:27017/agenda-explainer';
 
 export const agenda = new Agenda({
   db: {address: mongodbURL, collection: 'agendaJobs'},
-  processEvery: '2 seconds',
+  processEvery: '5 seconds',
   maxConcurrency: 1,
   defaultConcurrency: 1
 });
@@ -35,12 +43,9 @@ agenda.start().then(
   () => console.log("Job scheduler failed!")
 );
 
-console.log(process.env.EXPLAINER_SERVICE_PLANNER)
-
 agenda.define('explainer call', async job => {
-  let plan_run = job.attrs.data[1] as ExplainRun;
-  let callback  = job.attrs.data[2]as string
-  console.log("Schedule job: " + plan_run.id);
-  schedule_run(plan_run, callback, job);
+  let explain_run = job.attrs.data[1] as ExplainRun;
+  console.log("Schedule job: " + explain_run.request.id);
+  schedule_run(explain_run, job);
 });
 
