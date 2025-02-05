@@ -10,8 +10,6 @@ conflicts/
 uploads/
 
 # Programms
-ltlfkit/
 symbolic-xaip
-downward-xaip
 z3
 

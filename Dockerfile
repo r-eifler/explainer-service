@@ -57,15 +57,8 @@ RUN apt-get install -y spot libspot-dev
 RUN mkdir -p /usr/src/FD_XAIP
 COPY downward-xaip/ /usr/src/FD_XAIP/
 WORKDIR /usr/src/FD_XAIP
-RUN rm -r builds
+RUN rm -rf builds
 RUN ./build.py
-
-# symbolic xaip
-# RUN mkdir -p /usr/src/SYMBOLIC_XAIP
-# COPY symbolic-xaip/ /usr/src/SYMBOLIC_XAIP/
-# WORKDIR /usr/src/SYMBOLIC_XAIP
-# RUN rm -r builds
-# RUN ./build.py
 
 
 RUN mkdir -p /usr/src/app/src
@@ -90,10 +83,8 @@ RUN npm install -g ts-node
 EXPOSE 3334
 
 ENV EXPLAINER_SERVICE_PLANNER="/usr/src/FD_XAIP/fast-downward.py"
-# ENV PLANNER_symbolic_XAIP="/usr/src/SYMBOLIC_XAIP/fast-downward.py"
 ENV LTL2HAO_PATH="/usr/src/ltlfkit/"
 ENV TEMP_RUN_FOLDERS="/usr/temp"
-ENV LTL2HAO_PATH="/usr/src/ltlfkit/"
 
 WORKDIR /usr/src/app/
 CMD npm start
