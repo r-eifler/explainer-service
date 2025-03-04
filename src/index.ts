@@ -8,7 +8,7 @@ import { ExplainRun } from './domain/explain_run';
 dotenv.config();
 
 const app = express();
-const port = process.env.EXPLAINER_SERVICE_PORT || 3334;
+const port = process.env.PORT || 3334;
 
 console.log("Debug output: " + process.env.DEBUG_OUTPUT);
 console.log("folder to temporally store the experiment data: " + process.env.TEMP_RUN_FOLDERS);
@@ -29,7 +29,8 @@ app.listen(port, () => {
 });
 
 
-const mongodbURL = process.env.EXPLAINER_MONGO_DB || 'localhost:27017/agenda-explainer';
+const mongodbURL = process.env.MONGO_DB || 'localhost:27017/agenda-explainer';
+console.log("Database: " + mongodbURL);
 
 export const agenda = new Agenda({
   db: {address: mongodbURL, collection: 'agendaJobs'},

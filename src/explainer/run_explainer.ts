@@ -1,17 +1,16 @@
-import {spawn} from 'child_process';
-import * as fs from 'fs';
-import { PlanningModel } from '../domain/pddl';
 import { Job } from '@hokify/agenda';
-import { ExplainerRequest, ExplainerResponse, ExplanationRunStatus, Result } from '../domain/service_communication';
+import { spawn } from 'child_process';
+import * as fs from 'fs';
 import { ExplainRun } from '../domain/explain_run';
 import { PlanProperty } from '../domain/plan_property';
+import { ExplainerRequest, ExplainerResponse, ExplanationRunStatus, Result } from '../domain/service_communication';
 import { cleanUpExperimentEnvironment, setupExperimentEnvironment } from './experiment_utils';
 
 
 export function createExplanationRun(request: ExplainerRequest): ExplainRun {
   return {
     request,
-    status: ExplanationRunStatus.pending,
+    status: ExplanationRunStatus.PENDING,
     experiment_path: process.env.TEMP_RUN_FOLDERS + '/' + request.id,
     explainer: process.env.EXPLAINER_SERVICE_PLANNER,
     args: [
@@ -50,7 +49,7 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
 
     return new Promise(function (resolve, reject) {
 
-      explain_run.status = ExplanationRunStatus.running
+      explain_run.status = ExplanationRunStatus.RUNNING
       let args = explain_run.args;
 
       if(explain_run.cost_bound){
@@ -82,20 +81,20 @@ function run(explain_run: ExplainRun, job: Job<any>): Promise<ExplainRun> {
       explainProcess.on('close', function (code) { 
         switch(code) {
           case 0:
-            explain_run.status = ExplanationRunStatus.finished
+            explain_run.status = ExplanationRunStatus.FINISHED
             break;
           case 12:
-            explain_run.status = ExplanationRunStatus.finished
+            explain_run.status = ExplanationRunStatus.FINISHED
             break;
           default:
-            explain_run.status = ExplanationRunStatus.failed
+            explain_run.status = ExplanationRunStatus.FAILED
             break;
         }
         console.log("ReturnCode: " + code);
         resolve(explain_run);
       });
       explainProcess.on('error', function (err) {
-        explain_run.status = ExplanationRunStatus.failed
+        explain_run.status = ExplanationRunStatus.FAILED
         reject(err);
       });
     });
@@ -174,7 +173,7 @@ function sendResult(explainRun: ExplainRun) {
       result: null
     }
 
-  if(explainRun.status === ExplanationRunStatus.finished){
+  if(explainRun.status === ExplanationRunStatus.FINISHED){
     const result = get_res(explainRun);
     data.result = result; 
   }
@@ -189,7 +188,7 @@ function sendResult(explainRun: ExplainRun) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": 'Bearer ' + process.env.EXPLAINER_KEY
+          "Authorization": 'Bearer ' + process.env.SERVICE_KEY
         },
         body: payload,
     }

@@ -1,10 +1,10 @@
 import { PlanProperty } from "./plan_property";
 
 export enum ExplanationRunStatus {
-    pending,
-    running,
-    failed,
-    finished
+    PENDING = "PENDING",
+    RUNNING = "RUNNING",
+    FAILED = "FAILED",
+    FINISHED = "FINISHED"
 }
 
 export interface ExplainerRequest  {
