@@ -1,4 +1,4 @@
-# OUTDATED!!!! Explainer Service
+# Explainer Service for IPEXCO Platform
 
 The explainer service runs a web server computing 
 
@@ -9,10 +9,86 @@ for a given problem and set of properties.
 
 It is based on [Downward - XAIP](https://github.com/r-eifler/downward-xaip).
 
+
+## Setup 
+
+Unless you want to change/update the planner service, we suggest running 
+the planner in a docker container. 
+
+A pre-build docker image is provided on DockerHub: [Planner Service](https://hub.docker.com/repository/docker/eifler/planner-service/general).
+
+To build the docker image yourself run:
+
+```
+docker build -t planner-service .
+```
+
+### Dependencies
+
+The dependencies are:
+
+- `npm` (https://www.npmjs.com/)
+- `node.js` version 22 (https://nodejs.org/en)
+- `python 3.11`
+    - `numpy`
+    - `scipy`
+    - `mip`
+
+For the dependencies of the planner and the ltlf translator, we refer to 
+respective repositories:
+
+- [Planner](https://github.com/r-eifler/downward-xaip)
+- [LTL Translator](https://bitbucket.org/acamacho/ltlfkit)
+
+
+Before the first run install npm packages with:
+
+```
+npm install
+```
+
+### Run
+
+To run the development server on the default port (`3334`) run:
+
+```
+npm start
+```
+
+### Environment
+
+The following environment variables can be defined, either in a `.env` file 
+if you run the service natively on your machine or in an environment file 
+for the docker image. 
+
+- `PORT`: port used by the web server of the service
+
+- `CONCURRENT_PLANNER_RUNS`: maximal number if job scheduled concurrently
+- `DEBUG_OUTPUT`: print debug output
+
+- `MONGO_DB`: URL of the MongoDB database with a unique name used by the job 
+    scheduler of the service
+
+- `API_KEY`: a random string that is used to authenticate a request from the 
+    back-end to a service
+- `SERVICE_KEY`: a random string that is used to authenticate any registered 
+    services, e.g. planner
+
+
+**Attention**: If you register a new service in the web interface, then 
+requested API Key and the `API_KEY` defined in the service environment 
+must match
+
+The following variables are only required, if the service is run natively:
+
+- `TEMP_RUN_FOLDERS`: path to a folder to store the input of the planner and 
+    its intermediate results
+- `PLANNER_SERVICE_PLANNER`: path to the planner executable. If you use the 
+    included version of Fast Downward set this variable to the absolute 
+    location of `downward-xaip/fast-downward.py`.
+
+
 ## API
-
-It runs on port `3334`.
-
 
 ### Explanation Computation Request
 
@@ -20,6 +96,7 @@ HTTP `POST` request to route `/all-mugs-msgs` with data:
 
 ```json
     {
+        "id": string,
         "model": {
             "types": PDDLType[],
             "predicates": PDDLPredicate[],
@@ -28,20 +105,9 @@ HTTP `POST` request to route `/all-mugs-msgs` with data:
             "initial": PDDLFact[],
             "goal": PDDLFact[]
         },
-        "exp_setting":{
-            "plan_properties":[
-                {
-                    "_id":<id>,
-                    "name":<name>,
-                    "type":<G|AS|LTL>,
-                    "formula":<formula>,
-                    "actionSets":[]
-                },
-                ...
-            ],
-            "hard_goals": [],
-            "soft_goals": <list of property names>
-        }
+        "goals": PlanProperty[],
+        "softGoals": string[], // goal ids
+        "hardGoals": string[], // goal ids
         "callback": <callback URL>
     }
 ```
@@ -49,38 +115,38 @@ HTTP `POST` request to route `/all-mugs-msgs` with data:
 A more detailed definition of `exp_setting` can be found in the README of 
 [Downward - XAIP](https://github.com/r-eifler/downward-xaip). 
 
-The used types are defied as (in Typescript):
+The types used to define the model are defied as (Typescript interfaces):
 
 ```typescript
-PDDLType {
+interface PDDLType {
     name: string;
     parent: string;
 }
 
-PDDLObject {
+interface PDDLObject {
     name: string;
     type: string;
 }
 
-PDDLPredicate {
+interface PDDLPredicate {
     name: string;
     negated: boolean;
     parameters: PDDLObject[];
 }
 
-PDDLFact {
+interface PDDLFact {
     name: string;
     arguments: string[]; 
     negated: boolean;
 }
 
-PDDLFunctionAssignment {
+interface PDDLFunctionAssignment {
     name: string;
     arguments: string[]; 
     value: number;
 }
 
-PDDLAction {
+interface PDDLAction {
     name: string; 
     parameters:  PDDLObject[];
     precondition: PDDLFact[];
@@ -88,12 +154,29 @@ PDDLAction {
 }
 ```
 
+Goals are defined as plan properties, the field required here are:
+
+```Typescript
+
+export interface PlanProperty {
+    _id: string;
+    name: string;
+    type: string;
+    formula: string;
+    actionSets: ActionSet[];
+}
+```
+
+For a description of the individual fields we refer to 
+[Downward - XAIP](https://github.com/r-eifler/downward-xaip).
+
 #### Response
 
 HTTP `POST` request to `callback` with data:
 
 ```json
 {
+    "id": string, // same as in the request
     "status": <status number>,
     "MUGS": {
         "complete": true,
@@ -112,9 +195,13 @@ HTTP `POST` request to `callback` with data:
 }
 ```
 
-status number meaning:
+`complete` indicates, that the response contains all MUGS/MGCS.
 
-- 0 = `PENDING`
-- 1 = `RUNNING`
-- 2 = `FAILED`
-- 3 = `FINISHED`
+Possible status are number meaning:
+
+```
+PENDING
+RUNNING
+FAILED
+FINISHED
+```
