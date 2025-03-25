@@ -13,7 +13,7 @@ It is based on [Downward - XAIP](https://github.com/r-eifler/downward-xaip).
 ## Setup 
 
 Unless you want to change/update the planner service, we suggest running 
-the planner in a docker container. 
+the explainer in a docker container. 
 
 A pre-build docker image is provided on DockerHub: [Planner Service](https://hub.docker.com/repository/docker/eifler/planner-service/general).
 
