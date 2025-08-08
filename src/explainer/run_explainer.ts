@@ -154,8 +154,8 @@ function goal_translator(plan_properties: PlanProperty[], goal: string): string{
     }
 
     if(goal.startsWith('accepting')){
-      const name = goal.replace('accepting(','').replace(')','')
-      const match = plan_properties.filter(p => p.type == 'LTL' && p.name == name);
+      const id = goal.replace('accepting(','').replace(')','')
+      const match = plan_properties.filter(p => p.type == 'LTL' && p._id == id);
       if(match.length == 1){
         return match[0]._id
       }
