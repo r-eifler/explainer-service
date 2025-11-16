@@ -30,9 +30,9 @@ RUN apt-get update -y
 RUN apt-get install -y python3.11
 RUN python3 --version
 RUN apt-get install -y python3-pip
-RUN python3 -m pip install numpy --break-system-packages
-RUN python3 -m pip install  scipy --break-system-packages
-RUN python3 -m pip install mip --break-system-packages
+# RUN python3 -m pip install numpy --break-system-packages
+# RUN python3 -m pip install  scipy --break-system-packages
+# RUN python3 -m pip install mip --break-system-packages
 
 # automaton generator for LTLf
 COPY ltlfkit/ /usr/src/ltlfkit
