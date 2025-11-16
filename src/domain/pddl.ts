@@ -34,6 +34,7 @@ export interface PDDLAction {
 }
 
 export interface PlanningDomain {
+    constants: PDDLObject[];
     types: PDDLType[];
     predicates: PDDLPredicate[];
     actions: PDDLAction[];
@@ -62,6 +63,9 @@ export function toPDDL_domain(model: PlanningModel): string {
                 .filter(t => t.name != 'object')
                 .map(t => "\t\t" + t.name + " - " + (t.parent && t.parent != 'TODO' ? t.parent : 'object'))
                 .join("\n") 
+            + "\n)\n";
+
+        d += "(:constants \n" + model.constants.map(o => '\t' + o.name + " - " + o.type).join("\n")
             + "\n)\n";
 
         d += "(:predicates \n" + model.predicates.map(
