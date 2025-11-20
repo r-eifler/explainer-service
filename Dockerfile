@@ -48,10 +48,12 @@ RUN make install-strip
 
 #spot
 RUN apt-get install -y wget gnupg
-RUN wget -q -O - https://www.lrde.epita.fr/repo/debian.gpg | apt-key add -
-RUN echo 'deb https://www.lrde.epita.fr/repo/debian/ stable/' >> /etc/apt/sources.list
+RUN wget -q -O /etc/apt/keyrings/lre-epita.gpg https://www.lre.epita.fr/repo/debian.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/lre-epita.gpg] http://www.lre.epita.fr/repo/debian/ stable/" > /etc/apt/sources.list.d/lre-epita.list
 RUN apt-get update
-RUN apt-get install -y spot libspot-dev
+RUN apt-get install -y libltdl-dev
+RUN apt-get install -y spot 
+# RUN apt-get install -y libspot-dev #C++ header files not needed 
 
 # downward xaip
 RUN mkdir -p /usr/src/FD_XAIP
